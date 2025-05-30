@@ -1,0 +1,52 @@
+name: Watch for Planfix REST API changes
+
+on:
+  workflow_dispatch:  # разрешить ручной запуск
+  schedule:
+    # раз в сутки в 02:00 UTC  https://crontab.guru/
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: write # права на запись в реп
+
+jobs:
+  check-compare-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Get current version from repo
+        id: current-version
+        run: |
+          if [ -f VERSION ]; then
+            echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+          else
+            echo "version=0.0.0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fetch Planfix spec and check version
+        id: remote-version
+        run: |
+          mkdir -p tmp
+          curl -s https://help.planfix.com/restapidocs/swagger.json > tmp/swagger.json
+          REMOTE_VERSION=$(cat tmp/swagger.json | jq -r '.info.version')
+          echo $REMOTE_VERSION
+          echo "version=$REMOTE_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Format JSON
+        if: ${{ steps.remote-version.outputs.version != steps.current-version.outputs.version }}
+        run: |
+          jq . tmp/swagger.json > swagger.json
+          echo ${{ steps.remote-version.outputs.version }} > VERSION
+
+      - name: Commit changes
+        if: ${{ steps.remote-version.outputs.version != steps.current-version.outputs.version }}
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add swagger.json VERSION
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update REST API to version ${{ steps.remote-version.outputs.version }}"
+          git push
