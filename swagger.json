@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.1",
   "info": {
-    "version": "1.3.4",
+    "version": "1.3.5",
     "title": "Planfix REST API",
     "description": "Documentation for Planfix REST API. <br> Generated <a href=\"https://root/restapidocs/swagger.json\">swagger.json</a>"
   },
@@ -25872,6 +25872,11 @@
             "type": "string",
             "example": "1900-12-01T00:00Z (yyyy-MM-dd'T'HH:mm'Z')",
             "description": "By ISO format"
+          },
+          "dateTimeUtcSeconds": {
+            "type": "string",
+            "example": "1900-12-01T00:00+0000 (yyyy-MM-dd'T'HH:mm:ssZ)",
+            "description": "By ISO8601 format"
           }
         }
       },
